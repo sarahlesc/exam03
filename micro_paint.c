@@ -67,6 +67,10 @@ void 	perimeter_rectangle(char **tab, float x, float y, float width_rect, float 
 	int i;
 	int j;
 
+	if (x < 0)
+		x = 0;
+	if (y < 0)
+		y = 0;
 	j = (int)x;
 	i = (int)y;
 	while (j < (int)x + width_rect - 1 && j < width)
@@ -74,7 +78,7 @@ void 	perimeter_rectangle(char **tab, float x, float y, float width_rect, float 
 		tab[i][j] = form_char;
 		j++;
 	}
-	while (i < (int)y + height_rect && i < height)
+	while (i < (int)y + height_rect - 1 && i < height)
 	{
 		tab[i][(int)x] = form_char;
 		tab[i][(int)x + (int)width_rect - 1] = form_char;
@@ -83,7 +87,7 @@ void 	perimeter_rectangle(char **tab, float x, float y, float width_rect, float 
 	if (i < height)
 	{
 		j = (int)x;
-		while (j < (int)x + width_rect && j < width)
+		while (j < (int)x + width_rect - 1 && j < width)
 		{
 			tab[i - 1][j] = form_char;
 			j++;
@@ -96,6 +100,10 @@ void 	area_rectangle(char **tab, float x, float y, float width_rect, float heigh
 	int i;
 	int j;
 
+	if (x < 0)
+		x = 0;
+	if (y < 0)
+		y = 0;
 	j = (int)x;
 	i = (int)y;
 	while (i < (int)y + height_rect && i < height)
@@ -143,15 +151,20 @@ int main(int argc, char **argv)
 		return (-1);
 	}
 	fd = fopen(argv[1], "r");
-	fscanf(fd, "%d %d %c %c %f %f %f %f %c", &width, &height, &background_char, &form, &x, &y, &width_rect, &height_rect, &form_char);
+
+	fscanf(fd, "%d %d %c *", &width, &height, &background_char);
 	if (width < 0 || height < 0 || width > 300 || height > 300)
 		return (-1);
 	tab = malloc(sizeof(char *) * height);
 	if (tab == NULL)
 		return (-1);
 	make_tab(tab, width, height, background_char);
+//	print_tab(tab, height);
+	while (fscanf(fd, "%c %f %f %f %f %c*", &form, &x, &y, &width_rect, &height_rect, &form_char) > 0)
+	{
+		put_form_on_tab(tab, form, x, y, width_rect, height_rect, form_char, width, height);
+//		print_tab(tab, height);
+	}
 	print_tab(tab, height);
-	put_form_on_tab(tab, form, x, y, width_rect, height_rect, form_char, width, height);
-	print_tab(tab, height);
-	free_tab(tab, width);
+	free_tab(tab, height);
 }
