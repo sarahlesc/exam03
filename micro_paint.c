@@ -1,170 +1,167 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <stdlib.h>
 
-void 	print_fd(char *str)
+typedef struct s_zone
 {
-	int i;
+    int width;
+    int height;
+    char backgrond;
+} t_zone;
 
-	i = 0;
-	while (str[i] != '\0')
-	{
-		write(1, &str[i], 1);
-		i++;
-	}
+typedef struct s_list
+{
+	char	type;
+	float	x;
+	float	y;
+	float	width;
+	float	height;
+	char	color;
+} t_list;
+
+int ft_strlen(char *str)
+{
+    int i = 0;
+
+    if (!str)
+        return (i);
+    while (str[i])
+        i++;
+    return (i);
 }
 
-char	**make_tab(char **tab, int width, int height, char background_char)
+int fail(char *str)
 {
-	int i;
-	int j;
-
-	i = 0;
-	while (i < height)
-	{
-		j = 0;
-		tab[i] = malloc(sizeof(char) * width + 1);
-		if (tab[i] == NULL)
-			return (NULL);
-		while (j < width)
-		{
-			tab[i][j] = background_char;
-			j++;
-		}
-		i++;
-	}
-	return (tab);
+    write(1, str, ft_strlen(str));
+    return (1);
 }
 
-void 	print_tab(char **tab, int height)
+int free_all(FILE *file, char *draw)
 {
-	int i;
-
-	i = 0;
-	while (i < height)
-	{
-		printf("%s\n", tab[i]);
-		i++;
-	}
-	printf("\n");
+    fclose(file);
+    if (draw)
+        free(draw);
+    return (1);
 }
 
-void 	free_tab(char **tab, int height)
+int check_zone(t_zone *zone)
 {
-	int i;
-
-	i = 0;
-	while (i < height)
-	{
-		free(tab[i]);
-		i++;
-	}
-	free(tab);
-}
-
-void 	perimeter_rectangle(char **tab, float x, float y, float width_rect, float height_rect, char form_char, int width, int height)
-{
-	int i;
-	int j;
-
-	if (x < 0)
-		x = 0;
-	if (y < 0)
-		y = 0;
-	j = (int)x;
-	i = (int)y;
-	while (j < (int)x + width_rect - 1 && j < width)
-	{
-		tab[i][j] = form_char;
-		j++;
-	}
-	while (i < (int)y + height_rect - 1 && i < height)
-	{
-		tab[i][(int)x] = form_char;
-		tab[i][(int)x + (int)width_rect - 1] = form_char;
-		i++;
-	}
-	if (i < height)
-	{
-		j = (int)x;
-		while (j < (int)x + width_rect - 1 && j < width)
-		{
-			tab[i - 1][j] = form_char;
-			j++;
-		}
-	}
-}
-
-void 	area_rectangle(char **tab, float x, float y, float width_rect, float height_rect, char form_char, int width, int height)
-{
-	int i;
-	int j;
-
-	if (x < 0)
-		x = 0;
-	if (y < 0)
-		y = 0;
-	j = (int)x;
-	i = (int)y;
-	while (i < (int)y + height_rect && i < height)
-	{
-		j = (int)x;
-		while (j < (int)x + width_rect && j < width)
-		{
-			tab[i][j] = form_char;
-			j++;
-		}
-		i++;
-	}
-}
-
-int		put_form_on_tab(char **tab, char form, float x, float y, float width_rect, float height_rect, char form_char, int width, int height)
-{
-	if (form == 'r')
-	{
-		perimeter_rectangle(tab, x, y, width_rect, height_rect, form_char, width, height);
-	}
-	if (form == 'R')
-		area_rectangle(tab, x, y, width_rect, height_rect, form_char, width, height);
+	if ((zone->width >= 0 && zone->width <= 300) && (zone->height >= 0 && zone->height <= 300))
+		return (0);
 	else
-		return (-1);
-	return (0);
+		return (1);
+}
+
+char *get_zone(FILE *file, t_zone *zone)
+{
+    int count;
+    char *array;
+    int i = 0;
+
+    if ((count = fscanf(file, "%d %d %c\n", &zone->width, &zone->height, &zone->backgrond)) != 3)
+        return (NULL);
+    if (count == (-1))
+        return (NULL);
+    if ((check_zone(zone)) == 1)
+        return (NULL);
+    array = (char *)malloc(sizeof(char) * (zone->width * zone->height));
+    while (i < zone->width * zone->height)
+    {
+        array[i] = zone->backgrond;
+        i++;
+    }
+    return (array);
+}
+
+int check_form(t_list *form)
+{
+	if ((form->height > 0.00000000 && form->width > 0.00000000) && (form->type == 'r' || form->type == 'R'))
+		return (0);
+	else
+    	return (1);
+}
+
+int is_rec(float y, float x, t_list *form)
+{
+    float check = 1.00000000;
+    if ((x < form->x) || (form->x + form->width < x) || (y < form->y) || (form->y + form->height < y))
+        return (0);
+    if (((x - form->x) < check) || ((form->x + form->width) - x < check) || ((y - form->y) < check) || ((form->y + form->height) - y < check))
+        return (2);
+    return (1);
+}
+
+void get_draw(char **draw, t_list *form, t_zone *zone)
+{
+    int x, y;
+    int rec;
+
+    y = 0;
+    while (y < zone->height)
+    {
+        x = 0;
+        while (x < zone->width)
+        {
+            rec = is_rec(y, x, form);
+            if ((form->type == 'r' && rec == 2) || (form->type == 'R' && rec))
+                (*draw)[(y * zone->width) + x] = form->color;
+            x++;
+        }
+        y++;
+    }
+}
+
+int drawing(FILE *file, char **draw, t_zone *zone)
+{
+    t_list form;
+    int count;
+
+    while ((count = fscanf(file, "%c %f %f %f %f %c\n", &form.type, &form.x, &form.y, &form.width, &form.height, &form.color)) == 6)
+    {
+        if ((check_form(&form)) == 1)
+            return (1);
+        get_draw(draw, &form, zone);
+    }
+    if (count != (-1))
+        return (1);
+    return (0);
+}
+
+void print_draw(char *draw, t_zone *zone)
+{
+    int i = 0;
+
+    while (i < zone->height)
+    {
+        write(1, draw + (i * zone->width), zone->width);
+        write(1, "\n", 1);
+        i++;
+    }
 }
 
 int main(int argc, char **argv)
 {
-	FILE *fd;
-	int width;
-	int height;
-	char background_char;
-	char form;
-	float x;
-	float y;
-	float width_rect;
-	float height_rect;
-	char form_char;
-	char **tab;
+    FILE *file;
+    char *draw;
+    t_zone zone;
 
-	if (argc != 2)
+    if (argc != 2)
+        return (fail("Error: argument\n"));
+    if (!(file = fopen(argv[1], "r")))
+        return (fail("Error: Operation file corrupted\n"));
+    if (!(draw = get_zone(file, &zone)))
 	{
-		print_fd("Error: argument\n");
-		return (-1);
+		free_all(file, NULL);
+		fail("Error: Operation file corrupted\n");
+		return (1);
 	}
-	fd = fopen(argv[1], "r");
-
-	fscanf(fd, "%d %d %c *", &width, &height, &background_char);
-	if (width < 0 || height < 0 || width > 300 || height > 300)
-		return (-1);
-	tab = malloc(sizeof(char *) * height);
-	if (tab == NULL)
-		return (-1);
-	make_tab(tab, width, height, background_char);
-//	print_tab(tab, height);
-	while (fscanf(fd, "%c %f %f %f %f %c*", &form, &x, &y, &width_rect, &height_rect, &form_char) > 0)
+    if ((drawing(file, &draw, &zone)) == 1)
 	{
-		put_form_on_tab(tab, form, x, y, width_rect, height_rect, form_char, width, height);
-//		print_tab(tab, height);
+		free_all(file, draw);
+		fail("Error: Operation file corrupted\n");
+		return (1);
 	}
-	print_tab(tab, height);
-	free_tab(tab, height);
+    print_draw(draw, &zone);
+    free_all(file, draw);
+    return (0);
 }
